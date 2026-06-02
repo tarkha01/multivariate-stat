@@ -1,14 +1,3 @@
-# ============================================================
-# Multivariate Statistics - Final Project
-# YSU Master's Program, Academic Year 2025/2026
-# Dataset: WHO Life Expectancy (2000-2015)
-# Source: https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who
-#
-# Run from terminal:
-#   cd C:/Users/rozii/Desktop/ASDS/multivariate_stat
-#   pip install -r requirements.txt
-#   python analysis.py
-# ============================================================
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -35,7 +24,7 @@ from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_val_score
 
-# ---------- plot style ----------
+# plot style
 sns.set_theme(style="whitegrid", font_scale=1.0)
 plt.rcParams["figure.dpi"] = 100
 OUT = "."   # folder where PNG files are saved
@@ -45,9 +34,9 @@ print("WHO Life Expectancy – Multivariate Analysis")
 print("=" * 50)
 
 
-# ============================================================
+
 # 1. LOAD AND PREPARE DATA
-# ============================================================
+
 df_raw = pd.read_csv("Life Expectancy Data.csv")
 df_raw.columns = (df_raw.columns
                   .str.strip()
@@ -77,9 +66,9 @@ print("\nSummary statistics:")
 print(df_num.describe().round(2).to_string())
 
 
-# ============================================================
+
 # 2. SCATTER PLOT MATRIX  (3 variants as in the assignment)
-# ============================================================
+
 PLOT_VARS = ["Life_expectancy", "Adult_Mortality", "BMI", "GDP", "Schooling"]
 colors = {"Developing": "black", "Developed": "red"}
 
@@ -112,7 +101,7 @@ plt.savefig(os.path.join(OUT, "plot_01_scattermatrix_basic.png"),
             bbox_inches="tight")
 plt.close()
 
-# --- Version 2: seaborn pairplot with KDE on diagonal ---
+#  Version 2: seaborn pairplot with KDE on diagonal 
 g2 = sns.pairplot(df[PLOT_VARS + ["Status"]],
                   hue="Status",
                   palette={"Developing": "steelblue", "Developed": "tomato"},
@@ -124,7 +113,7 @@ g2.savefig(os.path.join(OUT, "plot_02_scattermatrix_kde.png"),
            bbox_inches="tight")
 plt.close()
 
-# --- Version 3: seaborn pairplot with regression lines ---
+#  Version 3: seaborn pairplot with regression lines 
 g3 = sns.pairplot(df[PLOT_VARS],
                   kind="reg",
                   diag_kind="kde",
@@ -139,11 +128,10 @@ plt.close()
 print("\nScatter plot matrices saved.")
 
 
-# ============================================================
-# 3. NORMALITY ASSESSMENT
-# ============================================================
 
-# --- 3a. Shapiro-Wilk per variable ---
+# 3. NORMALITY ASSESSMENT
+
+# 3a. Shapiro-Wilk per variable 
 print("\n--- Shapiro-Wilk Test (H0: normal distribution) ---")
 sw_results = {}
 rng = np.random.default_rng(42)
@@ -156,7 +144,7 @@ for col in KEY_VARS:
 sw_df = pd.DataFrame(sw_results).T
 print(sw_df.to_string())
 
-# --- 3b. Q-Q plots ---
+# 3b. Q-Q plots 
 fig, axes = plt.subplots(2, 4, figsize=(14, 7))
 for ax, col in zip(axes.flat, KEY_VARS):
     stats.probplot(df_num[col], dist="norm", plot=ax)
@@ -168,7 +156,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(OUT, "plot_04_qqplots.png"), bbox_inches="tight")
 plt.close()
 
-# --- 3c. Histograms with KDE overlay ---
+# 3c. Histograms with KDE overlay 
 fig, axes = plt.subplots(2, 4, figsize=(14, 6))
 for ax, col in zip(axes.flat, KEY_VARS):
     ax.hist(df_num[col], bins=35, density=True,
@@ -183,7 +171,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(OUT, "plot_05_histograms.png"), bbox_inches="tight")
 plt.close()
 
-# --- 3d. Mardia's multivariate normality test (manual implementation) ---
+# 3d. Mardia's multivariate normality test (manual implementation) 
 def mardia_test(X):
     """Returns Mardia skewness and kurtosis test statistics."""
     n, p = X.shape
@@ -224,16 +212,14 @@ for k, v in mardia_log.items():
     print(f"  {k}: {v}")
 
 
-# ============================================================
 # 4. LINEAR REGRESSION
-# ============================================================
 formula = "Life_expectancy ~ Adult_Mortality + Alcohol + BMI + HIVAIDS + GDP + Schooling + Income_composition_of_resources"
 
 model_full = smf.ols(formula, data=df_num).fit()
 print("\n=== Full OLS Regression ===")
 print(model_full.summary())
 
-# --- 4a. Regression diagnostics ---
+# 4a. Regression diagnostics 
 fig, axes = plt.subplots(2, 2, figsize=(10, 8))
 
 fitted  = model_full.fittedvalues
@@ -272,7 +258,7 @@ plt.savefig(os.path.join(OUT, "plot_06_regression_diagnostics.png"),
             bbox_inches="tight")
 plt.close()
 
-# --- 4b. Variance Inflation Factors ---
+# 4b. Variance Inflation Factors 
 X_vif = sm.add_constant(df_num.drop(columns="Life_expectancy"))
 vif_data = pd.DataFrame({
     "Variable": X_vif.columns[1:],
@@ -283,11 +269,9 @@ print("\n--- VIF (>5 indicates multicollinearity) ---")
 print(vif_data.to_string())
 
 
-# ============================================================
 # 5. VARIABLE SELECTION
-# ============================================================
 
-# --- 5a. Forward stepwise by AIC ---
+# 5a. Forward stepwise by AIC 
 def stepwise_aic(df_data, dependent, candidates):
     """Forward-backward stepwise regression minimising AIC."""
     selected, remaining = [], list(candidates)
@@ -324,7 +308,7 @@ model_step  = smf.ols(
 print(f"\n--- Stepwise AIC selected: {step_vars} ---")
 print(model_step.summary().tables[0])
 
-# --- 5b. LASSO with cross-validation ---
+# 5b. LASSO with cross-validation 
 X_mat = df_num[predictors].values
 y_vec = df_num["Life_expectancy"].values
 scaler = StandardScaler()
@@ -348,7 +332,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(OUT, "plot_08_lasso_cv.png"), bbox_inches="tight")
 plt.close()
 
-# --- 5c. Model comparison table ---
+# 5c. Model comparison table 
 model_lasso_fit = smf.ols(
     f"Life_expectancy ~ {' + '.join(lasso_selected)}", data=df_num
 ).fit()
@@ -397,9 +381,7 @@ plt.savefig(os.path.join(OUT, "plot_07_variable_selection.png"),
 plt.close()
 
 
-# ============================================================
 # 6. PRINCIPAL COMPONENT ANALYSIS
-# ============================================================
 scaler_pca = StandardScaler()
 X_pca_sc   = scaler_pca.fit_transform(df_num.values)
 
@@ -423,7 +405,7 @@ load_df = pd.DataFrame(loadings[:, :4], index=KEY_VARS,
                         columns=[f"PC{i+1}" for i in range(4)]).round(3)
 print(load_df.to_string())
 
-# --- 6a. Scree plot ---
+#6a. Scree plot 
 fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 
 axes[0].bar(range(1, len(KEY_VARS)+1), explained,
@@ -451,9 +433,7 @@ plt.savefig(os.path.join(OUT, "plot_09_screeplot.png"), bbox_inches="tight")
 plt.close()
 
 
-# ============================================================
 # 7. CORRELATION CIRCLE
-# ============================================================
 pc1_var = explained[0]
 pc2_var = explained[1]
 
@@ -500,9 +480,7 @@ plt.close()
 print("Correlation circle saved.")
 
 
-# ============================================================
 # 8. INDIVIDUAL PROJECTIONS ONTO PC1–PC2
-# ============================================================
 status_colors = {"Developing": "steelblue", "Developed": "tomato"}
 status_vals   = df["Status"].values
 
@@ -564,9 +542,7 @@ plt.close()
 print("Individual projection plots saved.")
 
 
-# ============================================================
 # 9. CORRELATION MATRIX
-# ============================================================
 cor_mat = df_num.corr()
 print("\n=== Correlation Matrix ===")
 print(cor_mat.round(3).to_string())
@@ -583,9 +559,8 @@ plt.savefig(os.path.join(OUT, "plot_13_corrplot.png"), bbox_inches="tight")
 plt.close()
 
 
-# ============================================================
+
 # 10. ADDITIONAL: HIERARCHICAL CLUSTERING
-# ============================================================
 X_sc_cl = StandardScaler().fit_transform(df_num.values)
 Z = linkage(X_sc_cl, method="ward")
 
@@ -626,9 +601,7 @@ profile["cluster"] = df["cluster"]
 print(profile.groupby("cluster").mean().round(2).to_string())
 
 
-# ============================================================
 # FINAL SUMMARY
-# ============================================================
 print("\n" + "=" * 50)
 print("SUMMARY")
 print("=" * 50)
