@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Data (large CSV — share via Kaggle link instead)
+Life Expectancy Data.csv
+
+# Generated plots (optional: comment out if you want to include them)
+# plot_*.png
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.pdf
